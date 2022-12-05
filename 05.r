@@ -1,17 +1,13 @@
 x <- readLines("05.txt")
 empty <- which(x == "")[1]
 
-start <- x[seq_len(empty - 1)]
-slen <- length(start)
-stacknums <- strsplit(start[slen], "[ ]*")[[1]]
-stacknums <- stacknums[stacknums != ""]
-n_stack <- strtoi(stacknums[length(stacknums)])
-start <- start[-slen]
+start <- x[seq_len(empty - 2)]
+n_stack <- (nchar(start[1]) + 1)/4
 stackcols <- 4L*seq_len(n_stack) - 2L
 start_stacks <- lapply(stackcols, \(n) substr(start, n, n))
 start_stacks <- lapply(start_stacks, \(s) s[s != " "]) # top crate first
 
-steps <- do.call(rbind, strsplit(x[seq(empty + 1, length(x))], " "))
+steps <- do.call(rbind, strsplit(x[seq(empty + 1, length(x))], " ", fixed = TRUE))
 steps <- apply(steps[, c(2, 4, 6)], 2, strtoi) # n, from, to
 
 stacks <- start_stacks

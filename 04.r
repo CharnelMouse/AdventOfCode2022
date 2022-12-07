@@ -1,7 +1,8 @@
 x <- scan(
   text = chartr("-", ",", readLines("04.txt")),
   what = list(integer(), integer(), integer(), integer()),
-  sep = ","
+  sep = ",",
+  quiet = TRUE
 )
 left_contained <- x[[1]] >= x[[3]] & x[[2]] <= x[[4]]
 right_contained <- x[[1]] <= x[[3]] & x[[2]] >= x[[4]]

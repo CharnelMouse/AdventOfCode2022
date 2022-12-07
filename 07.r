@@ -1,56 +1,47 @@
 x <- readLines("07.txt")
 nav <- which(startsWith(x, "$ cd"))
 query <- which(x == "$ ls")
-responses <- seq_along(x)[-c(nav, query)]
 location <- Reduce(
   \(folders, n) {
-    if (substr(n, 1, 4) != "$ cd")
-      folders
-    else{
-      target <- substring(n, 6)
-      switch(
-        target,
-        "/" = "/",
-        ".." = folders[-length(folders)],
-        c(folders, paste(folders[length(folders)], target, sep = "/"))
-      )
-    }
+    target <- substring(n, 6)
+    switch(
+      target,
+      "/" = "/",
+      ".." = folders[-length(folders)],
+      # use full path, since same folder name can appear in different paths
+      c(folders, paste(folders[length(folders)], target, sep = "/"))
+    )
   },
   x[nav],
   init = character(),
   accumulate = TRUE
 )[-1]
 query_locations <- location[findInterval(query, nav)]
-# any repeat ls commands in same location?
-stopifnot(!anyDuplicated(query_locations))
-# any repeated folder names in different locations?
-# would expect yes if not adding parent path to folder names
-stopifnot(!anyDuplicated(vapply(
-  query_locations,
-  \(fs) fs[length(fs)],
-  character(1)
-)))
+# can check for no duplicates here if worried about multiple ls calls on same
+# directory
 
-command <- sort(c(nav, query))
-nxt <- vapply(query, \(q) command[command > q][1], integer(1))
-nxt[is.na(nxt)] <- length(x) + 1L
-stopifnot(all(nxt > query))
-query_response_indices <- Map(seq.int, query + 1L, nxt - 1L)
-# used all lines?
-stopifnot(setequal(c(command, unlist(query_response_indices)), seq_along(x)))
-
-sizes <- integer()
-for (q in seq_along(query)) {
-  qloc <- query_locations[[q]]
-  sizes[setdiff(qloc, names(sizes))] <- 0L
-  split_responses <- strsplit(x[query_response_indices[[q]]], " ", fixed = TRUE)
-  response_first <- vapply(split_responses, "[", character(1), 1)
-  response_size_sum <- sum(strtoi(response_first[response_first != "dir"]))
-  sizes[qloc] <- sizes[qloc] + response_size_sum
-}
-sum(sizes[sizes <= 100000L]) # part one: 1583951
+file_responses <- which(substr(x, 1, 1) %in% as.character(0:9))
+file_sizes <- vapply(
+  strsplit(x[file_responses], " ", fixed = TRUE),
+  \(splt) strtoi(splt[1]),
+  integer(1)
+)
+# total file size in queries
+query_file_size_totals <- tapply(
+  file_sizes,
+  factor(findInterval(file_responses, query), seq_along(query)),
+  sum,
+  default = 0L
+)
+# total file size in queries, summed across relevant directories
+totals <- tapply(
+  rep(query_file_size_totals, lengths(query_locations)),
+  unlist(query_locations),
+  sum
+)
+sum(totals[totals <= 100000L]) # part one: 1583951
 
 required <- 30000000L
-current <- 70000000L - sizes["/"]
+current <- 70000000L - totals["/"]
 to_recover <- required - current
-min(sizes[sizes >= to_recover]) # part two: 214171
+min(totals[totals >= to_recover]) # part two: 214171

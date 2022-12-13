@@ -36,18 +36,6 @@ res <- vapply(pairs, \(lst) comp(lst[[1]], lst[[2]]), logical(1))
 sum(seq_along(res)[res]) # part one: 5623 too low
 
 extra <- parse_packets(c("[[2]]", "[[6]]"))
-enhanced <- c(parsed, extra)
-sort_packets <- function(packets) {
-  if (length(packets) <= 1)
-    return(packets)
-  hinge <- packets[[1]]
-  comps <- vapply(packets[-1], comp, logical(1), hinge)
-  c(
-    sort_packets(packets[c(FALSE, comps)]),
-    list(hinge),
-    sort_packets(packets[c(FALSE, !comps)])
-  )
-}
-sorted <- sort_packets(enhanced)
-stopifnot(length(sorted) == length(enhanced))
-prod(match(extra, sorted)) # part two: 20570
+place1 <- 1L + sum(vapply(parsed, comp, logical(1), extra[[1]]))
+place2 <- 1L + sum(vapply(parsed, comp, logical(1), extra[[2]]))
+place1*place2 + min(place1, place2) # part two: 20570

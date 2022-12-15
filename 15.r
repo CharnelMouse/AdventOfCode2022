@@ -12,7 +12,7 @@ intervals <- mapply(
   tb$sx,
   row_ranges
 )
-covered <- Reduce(union, intervals)
+covered <- Reduce(c, intervals)
 beacons <- unique(tb$bx[tb$by == p1_row])
 length(setdiff(covered, beacons)) # part one: 5176944 too high
 

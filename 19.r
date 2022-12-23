@@ -31,12 +31,9 @@ blueprints <- apply(
   simplify = FALSE
 )
 
-# ore -> ore robot
-# ore -> clay robot
-# ore + clay -> obsidian robot
-# ore + obsidian -> geode robot
-# so clay is just for obsidian robots
-# example shows this isn't just a bang-bang solution
+# example shows this isn't just a bang-bang solution,
+# so we need to do proper branching.
+# adding a cache to try to speed things up
 
 access_cache <- function(cache, resources, robots, time) {
   res <- cache[
@@ -102,7 +99,8 @@ max_count <- function(
     return(list(geodes + robots[4], cache))
   if (geodes + time*robots[4] + (time*(time - 1L) %/% 2L) <= best)
     return(list(0L, cache))
-  # don't care about resources past maximum amount we could use in time limit
+  # don't care about resources past maximum amount we could use in time limit,
+  # also helps cache hits
   resources <- pmin(
     resources,
     max_costs*(time - 1L) - robots[-4]*max((time - 2L), 0L)
@@ -178,17 +176,9 @@ start <- function(blueprint, time) {
     integer(),
     0L,
     list()
-  )
+  )[[1]]
 }
-res <- vapply(
-  blueprints,
-  \(b) start(b, 24L)[[1]],
-  integer(1)
-)
+res <- vapply(blueprints, start, integer(1), 24L)
 sum(seq_along(blueprints)*res) # part one: 1349
-res2 <- vapply(
-  blueprints[1:3],
-  \(b) start(b, 32L)[[1]],
-  integer(1)
-)
+res2 <- vapply(blueprints[1:3], start, integer(1), 32L) # takes a few minutes
 prod(res2) # part two: 21840

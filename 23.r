@@ -4,33 +4,31 @@ n_elves <- nrow(elves)
 
 decide <- function(n, elves, time) {
   elf <- elves[n, ]
-  all_neigh <- (elves[-n, 1] %in% (elf[1] + seq.int(-1L, 1L))) &
-    (elves[-n, 2] %in% (elf[2] + seq.int(-1L, 1L)))
-  if (!any(all_neigh))
+  h <- elves[, 1] %in% (elf[1] + seq.int(-1L, 1L))
+  h[n] <- FALSE
+  both <- which(elves[h, 2] %in% (elf[2] + seq.int(-1L, 1L)))
+  if (!any(both))
     return(elf)
+  neighs <- elves[both, , drop = FALSE]
   check_seq <- c("N", "S", "W", "E")[(time + 0:3 - 1L) %% 4L + 1L]
   for (dir in check_seq) {
     if (dir == "N") {
-      north_neigh <- elves[-n, 1] == (elf[1] - 1L) &
-        elves[-n, 2] %in% (elf[2] + seq.int(-1L, 1L))
+      north_neigh <- neighs[, 1] == (elf[1] - 1L)
       if (!any(north_neigh))
         return(c(elf[1] - 1L, elf[2]))
     }
     if (dir == "S") {
-      south_neigh <- elves[-n, 1] == (elf[1] + 1L) &
-        elves[-n, 2] %in% (elf[2] + seq.int(-1L, 1L))
+      south_neigh <- neighs[, 1] == (elf[1] + 1L)
       if (!any(south_neigh))
         return(c(elf[1] + 1L, elf[2]))
     }
     if (dir == "W") {
-      west_neigh <- elves[-n, 2] == (elf[2] - 1L) &
-        elves[-n, 1] %in% (elf[1] + seq.int(-1L, 1L))
+      west_neigh <- neighs[, 2] == (elf[2] - 1L)
       if (!any(west_neigh))
         return(c(elf[1], elf[2] - 1L))
     }
     if (dir == "E") {
-      east_neigh <- elves[-n, 2] == (elf[2] + 1L) &
-        elves[-n, 1] %in% (elf[1] + seq.int(-1L, 1L))
+      east_neigh <- neighs[, 2] == (elf[2] + 1L)
       if (!any(east_neigh))
         return(c(elf[1], elf[2] + 1L))
     }

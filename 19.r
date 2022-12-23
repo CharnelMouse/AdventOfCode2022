@@ -38,6 +38,52 @@ blueprints <- apply(
 # so clay is just for obsidian robots
 # example shows this isn't just a bang-bang solution
 
+access_cache <- function(cache, resources, robots, time) {
+  res <- cache[
+    resources[1] + 1L
+  ][[1]][
+    resources[2] + 1L
+  ][[1]][
+    resources[3] + 1L
+  ][[1]][
+    robots[1]
+  ][[1]][
+    robots[2] + 1L
+  ][[1]][
+    robots[3] + 1L
+  ][[1]][
+    robots[4] + 1L
+  ][[1]][time + 1L][[1]]
+  res
+}
+
+`access_cache<-` <- function(cache, resources, robots, time, value) {
+  stopifnot(!is.na(value))
+  old <- access_cache(cache, resources, robots, time)
+  if (!is.null(old)) {
+    if (is.na(old))
+      stop("old value is NA. resources: ", toString(resources), " robots: ", toString(robots), " time: ", time)
+    if (old != value)
+      stop(old, " ", value)
+  }
+  cache[
+    resources[1] + 1L
+  ][[1]][
+    resources[2] + 1L
+  ][[1]][
+    resources[3] + 1L
+  ][[1]][
+    robots[1]
+  ][[1]][
+    robots[2] + 1L
+  ][[1]][
+    robots[3] + 1L
+  ][[1]][
+    robots[4] + 1L
+  ][[1]][time + 1L][[1]] <- value
+  cache
+}
+
 max_count <- function(
   resources,
   robots,
@@ -47,19 +93,25 @@ max_count <- function(
   geodes,
   actions,
   times,
-  best
+  best,
+  cache
 ) {
   if (time == 0L)
-    return(geodes)
+    return(list(geodes, cache))
   if (time == 1L)
-    return(geodes + robots[4])
+    return(list(geodes + robots[4], cache))
   if (geodes + time*robots[4] + (time*(time - 1L) %/% 2L) <= best)
-    return(0L)
+    return(list(0L, cache))
   # don't care about resources past maximum amount we could use in time limit
   resources <- pmin(
     resources,
     max_costs*(time - 1L) - robots[-4]*max((time - 2L), 0L)
   )
+  resources <- pmax(resources, 0L)
+  cache_val <- access_cache(cache, resources, robots, time)
+  if (!is.null(cache_val)) {
+    return(list(geodes + cache_val, cache))
+  }
   # choose next robot to build, not necessarily at this time
   # can only choose a robot we're gathering the resources for
   gathering_for <- apply(
@@ -77,7 +129,8 @@ max_count <- function(
   available_times <- turns_to_buildable[turns_to_buildable < time]
   if (length(available_strategies) == 0) {
     final_geodes <- geodes + time*robots[4]
-    return(final_geodes)
+    access_cache(cache, resources, robots, time) <- time*robots[4]
+    return(list(final_geodes, cache))
   }
   # longest strategies first, since resolve more quickly
   available_strategies <- available_strategies[
@@ -103,11 +156,14 @@ max_count <- function(
       post_action_geodes,
       c(actions, action),
       c(times, timestep),
-      best
+      best,
+      cache
     )
-    best <- max(best, res)
+    best <- max(best, res[[1]])
+    cache <- res[[2]]
   }
-  best
+  access_cache(cache, resources, robots, time) <- best - geodes
+  list(best, cache)
 }
 start <- function(blueprint, time) {
   max_costs <- apply(blueprint, 2, max)
@@ -120,7 +176,8 @@ start <- function(blueprint, time) {
     0L,
     integer(),
     integer(),
-    0L
+    0L,
+    list()
   )
 }
 res <- vapply(
@@ -134,4 +191,4 @@ res2 <- vapply(
   \(b) start(b, 32L)[[1]],
   integer(1)
 )
-# prod(res2) # part two: ...
+prod(res2) # part two: 21840
